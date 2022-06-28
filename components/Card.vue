@@ -7,9 +7,9 @@
         </p>
       </header>
       <div class="card-content">
-        <div class="content has-text-centered">
+        <!-- <div class="content has-text-centered">
           <b-icon :icon="icon" size="is-large" type="is-primary" />
-        </div>
+        </div> -->
       </div>
       <footer class="card-footer">
         <div class="card-footer-item">
@@ -30,9 +30,9 @@ export default {
       type: String,
       required: true,
     },
-    icon: {
-      type: String,
-      required: true,
+    albumId: {
+      type: Number,
+      default: 0,
     },
   },
 }

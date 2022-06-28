@@ -1,3 +1,5 @@
+import { createQuery } from '~/helpers/queryHelper'
+
 export const state = () => ({
   albums: [],
   photos: [],
@@ -5,23 +7,22 @@ export const state = () => ({
 export const getters = {
   getAlbums: (state) => state.albums,
   getUnsorted: (state) => {
-    return state.photos.filter((photo) => !photo.album.id)
+    return state.photos.filter((photo) => !photo.albumId)
   },
   getAlbumPhoto: (state) => (albumId) =>
     state.photos.filter((photo) => photo.albumId === albumId),
 }
 export const actions = {
   updateAlbum() {},
-  getPhotosList() {},
+  async getPhotos({ commit }) {
+    await this.$photos.get('/photos', createQuery(40)).then((result) => {
+      console.log('result: ', result)
+      commit('savePhotos', result.data)
+      return result.data
+    })
+  },
   getAlbums({ commit }) {
-    const options = {
-      params: new URLSearchParams({
-        _page: 1,
-        _limit: 5,
-      }),
-    }
-
-    return this.$photos('/albums', options).then((result) => {
+    return this.$photos.get('/albums', createQuery(5)).then((result) => {
       commit('updateAlbums', result.data)
       return result.data
     })
@@ -33,6 +34,15 @@ export const mutations = {
   },
   updateAlbums(state, albums) {
     state.albums = albums
+  },
+  savePhotos(state, data) {
+    state.photos = data.map(({ id, title = '', url }) => {
+      return {
+        id,
+        title,
+        url,
+      }
+    })
   },
   removeAlbum(state, id) {
     state.albums = state.filter((item) => item.id !== id)
