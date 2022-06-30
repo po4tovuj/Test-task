@@ -1,23 +1,12 @@
 <template>
-  <div class="column">
-    <div class="card">
-      <header class="card-header">
-        <p class="card-header-title has-text-grey">
-          {{ title }}
-        </p>
-      </header>
-      <div class="card-content">
-        <!-- <div class="content has-text-centered">
-          <b-icon :icon="icon" size="is-large" type="is-primary" />
-        </div> -->
-      </div>
-      <footer class="card-footer">
-        <div class="card-footer-item">
-          <span>
-            <slot />
-          </span>
-        </div>
-      </footer>
+  <div class="card">
+    <header class="card-header">
+      <p class="card-header-title has-text-grey">
+        {{ title }}
+      </p>
+    </header>
+    <div class="card-content">
+      <slot :photo-list="photoList"> some text </slot>
     </div>
   </div>
 </template>
@@ -28,11 +17,16 @@ export default {
   props: {
     title: {
       type: String,
-      required: true,
+      default: '',
     },
     albumId: {
       type: Number,
       default: 0,
+    },
+  },
+  computed: {
+    photoList() {
+      return this.$store.getters['photo/getAlbumPhoto'](this.albumId)
     },
   },
 }

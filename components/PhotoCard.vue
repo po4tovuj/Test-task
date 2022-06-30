@@ -1,11 +1,12 @@
 <template>
-  <div>
+  <div class="photo">
     <b-image
       :src="url"
-      custom-class="img"
+      custom-class="photo__img"
       :alt="title || `Image doesn't have name`"
-    ></b-image>
-    <p>{{ title }}</p>
+    >
+    </b-image>
+    <p class="photo__title">{{ title }}</p>
   </div>
 </template>
 
@@ -34,7 +35,20 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.image {
-  max-width: 200px;
+.photo {
+  display: flex;
+  flex-direction: column;
+  // align-items: center;s
+  overflow: hidden;
+  &__img {
+    // max-width: 100px;
+  }
+  &__title {
+    text-align: start;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
 }
 </style>

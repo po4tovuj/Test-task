@@ -1,30 +1,29 @@
 <template>
   <section class="section">
     <div class="columns is-flex-wrap-wrap is-mobile">
-      <card v-for="album in albums" :key="album.id" :title="album.title" />
+      <albums-list></albums-list>
+      <!-- <card v-for="album in albums" :key="album.id" :title="album.title" /> -->
       <!-- Open source on <a href="https://github.com/buefy/buefy"> GitHub </a> -->
     </div>
-    <photos-list> </photos-list>
+    <!-- <photos-list> </photos-list> -->
   </section>
 </template>
 
 <script>
 import { mapActions, mapGetters } from 'vuex'
 
-import Card from '~/components/Card'
-import PhotosList from '~/components/PhotosList.vue'
+// import PhotosList from '~/components/PhotosList.vue'
+import AlbumsList from '~/components/AlbumsList.vue'
 
 export default {
   name: 'IndexPage',
   components: {
-    Card,
-    PhotosList,
+    // PhotosList,
+    AlbumsList,
   },
 
   async fetch({ store }) {
-    console.log('this: ', this)
-
-    // await store.dispatch('photo/getAlbums')
+    await store.dispatch('photo/getAlbums')
     await store.dispatch('photo/getPhotos')
   },
   // activated() {
