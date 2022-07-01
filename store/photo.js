@@ -1,24 +1,20 @@
 import { createQuery } from '~/helpers/queryHelper'
-const keyBy = (obj, key) => {
-  const parsedObject = obj.reduce((acc, item) => {
-    acc[item[key]] = { ...item }
-    return acc
-  }, {})
-  return new Map(Object.entries(parsedObject))
+const _findIndex = (arr = [], key, value) => {
+  return arr.findIndex((item) => item[key] === value)
 }
+
 export const state = () => ({
-  albums: {},
-  photos: {},
+  albums: [],
+  photos: [],
 })
 export const getters = {
   getAlbums: (state) => {
-    // console.log()
-    return Array.from(state.albums.values())
+    return state.albums
   },
   getUnsorted: (state) => {
-    return Array.from(state.photos.values())
-    // return .filter((photo) => !photo.albumId)
+    return state.photos.filter((item) => !item.albumId)
   },
+  getPhotos: (state) => state.photos,
   getAlbumPhoto: (state) => (albumId) =>
     state.photos.filter((photo) => photo.albumId === albumId),
 }
@@ -35,8 +31,9 @@ export const actions = {
   updatePhotos({ commit }, payload) {
     commit('savePhotos', payload)
   },
-  movePhoto({ commit }, photo) {
-    commit('movePhoto', photo)
+  movePhoto({ commit }, payload) {
+    commit('movePhoto', payload)
+    commit('updatePhotosInAlbums', payload)
   },
   async getAlbums({ commit }) {
     return await this.$photos.get('/albums', createQuery(5)).then((result) => {
@@ -44,48 +41,83 @@ export const actions = {
       return result.data
     })
   },
+  sortPhotoInAlbum({ commit }, payload) {
+    commit('sortPhotoInAlbum', payload)
+  },
 }
 export const mutations = {
-  addAlbum({ albums }, payload) {
-    albums = keyBy(payload, 'id')
-    // payload = payload.map((element) => {
-    //   return { ...element, photos: [] }
-    // })
-    // state.albums.push(payload)
-  },
+  addAlbum({ albums }, payload) {},
   saveAlbums(state, payload) {
-    // albums.reduce((acc, item) => {
-    //   acc:
-    // })
-    const parsedAlbums = keyBy(
-      payload.map((item) => ({
-        ...item,
-        isAlbum: true,
-        type: 'is-album',
-        photos: [],
-      })),
-      'id'
-    )
-
+    const parsedAlbums = payload.map((item) => ({
+      ...item,
+      isAlbum: true,
+      type: 'is-album',
+      photos: [],
+    }))
     state.albums = parsedAlbums
+  },
+  sortAlbums(state, payload) {
+    state.albums = payload
+  },
+  sortPhotoInAlbum(state, { albumId, oldIndex, newIndex }) {
+    const currentAlbumIndex = _findIndex(state.albums, 'id', parseInt(albumId))
+
+    if (currentAlbumIndex === -1) return
+    const albumToChange = state.albums[currentAlbumIndex]
+    let albumPhotos = albumToChange.photos
+    albumPhotos = albumPhotos.splice(
+      newIndex,
+      0,
+      albumPhotos.splice(oldIndex, 1)[0]
+    )
+    state.albums = state.albums.splice(currentAlbumIndex, 1, {
+      ...albumToChange,
+      photos: albumPhotos,
+    })
+  },
+  updatePhotosInAlbums(
+    state,
+    { prevAlbumId = null, newAlbumId = null, photoId }
+  ) {
+    if (prevAlbumId) {
+      const prevAlbumIndex = _findIndex(
+        state.albums,
+        'id',
+        parseInt(prevAlbumId)
+      )
+      const prevAlbum = state.albums[prevAlbumIndex]
+      state.albums[prevAlbumIndex].photos = prevAlbum.photos.filter(
+        (item) => item.id !== parseInt(photoId)
+      )
+    }
+    if (newAlbumId) {
+      const newAlbumIndex = _findIndex(state.albums, 'id', parseInt(newAlbumId))
+      if (newAlbumIndex === -1) return
+      //
+
+      const photo = state.photos.find((item) => item.id === parseInt(photoId))
+      state.albums[newAlbumIndex].photos.push(photo)
+    }
   },
   savePhotos(state, data) {
     data = data.map((item) => ({ ...item, albumId: null }))
-    state.photos = keyBy(data, 'id')
-    // state.albums[2].photos.push(state.photos[1])
+    state.photos = data
   },
-  movePhoto(state, { albumId = null, photoId }) {
-    const idToString = photoId.toString()
-    console.log('photos.get(idToString): ', state.photos.get(idToString))
-    state.photos.set(idToString, {
-      ...state.photos.get(idToString),
-      albumId,
-    })
-    // const clone = new Map(state.photos)
-    // console.log('clone: ', clone)
-    // console.log('photos.get(idToString): ', state.photos.get(idToString))
+  sortPhoto(state, payload) {
+    state.photos = payload
+  },
 
-    // console.log('photos: ', state.photos)
+  movePhoto(state, { prevAlbumId = null, newAlbumId = null, photoId }) {
+    const currentPhotoIndex = _findIndex(state.photos, 'id', parseInt(photoId))
+
+    if (currentPhotoIndex === -1) {
+      return
+    }
+    let currentPhoto = state.photos[currentPhotoIndex]
+
+    currentPhoto = { ...currentPhoto, albumId: parseInt(newAlbumId) || null }
+
+    state.photos.splice(currentPhotoIndex, 1, currentPhoto)
   },
   removeAlbum(state, id) {
     state.albums = state.filter((item) => item.id !== id)

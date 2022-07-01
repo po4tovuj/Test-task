@@ -1,17 +1,9 @@
 <template>
   <section>
-    <draggable
-      v-model="photos"
-      v-bind="dragOptions"
-      :pull="checkIn"
-      :put="checkPut"
-      @end="onEnd"
-    >
-      <!-- <ul class=""> -->
-      <li v-for="photo in photos" :key="photo.id">
+    <draggable v-model="photos" v-bind="dragOptions" @end="onEnd">
+      <li v-for="photo in photos" :key="photo.id" :data-photo-id="photo.id">
         <photo-card v-bind="photo"></photo-card>
       </li>
-      <!-- </ul> -->
     </draggable>
   </section>
 </template>
@@ -25,55 +17,51 @@ export default {
   components: { PhotoCard },
   data() {
     return {
-      photos: [],
       dragOptions: {
-        // return {
         animation: 200,
         group: 'photo',
         disabled: false,
         ghostClass: 'ghost',
         class: 'photo-list',
-
+        put: (e) => {},
         tag: 'ul',
-
-        // }
       },
     }
   },
 
   computed: {
     ...mapGetters({
-      photoList: 'photo/getUnsorted',
+      photolist: 'photo/getUnsorted',
     }),
-  },
-  watch: {
-    photos(newVal, oldVal) {
-      console.log('newVal: ', newVal)
+    photos: {
+      get() {
+        return this.photolist
+      },
+      set(val) {
+        if (
+          this.photolist.length === val.length ||
+          this.photolist.length < val.length
+        ) {
+          this.$store.commit('photo/sortPhoto', val)
+        }
+      },
     },
   },
-  mounted() {
-    this.photos = [...this.photoList]
-  },
+
   methods: {
     ...mapActions({
-      updatePhotos: 'photo/updatePhotos',
+      movePhoto: 'photo/movePhoto',
     }),
-    checkIn(to, from, dragEl) {
-      console.log('to in puull: ', to)
-      console.log('from: ', from)
-      console.log(dragEl)
-    },
-    checkPut(to, from, dragEl) {
-      console.log('to in puull: ', to)
-      console.log('from: ', from)
-      console.log(dragEl)
-    },
-    checkMove(e) {
-      // console.log('e: checkMove ', e)
-    },
 
-    onEnd(e) {
-      console.log('e: onEnd ', e)
+    onEnd({ from, to, item }) {
+      const prevAlbumId = from.getAttribute('data-album-id')
+
+      const newAlbumId = to.getAttribute('data-album-id')
+
+      const photoId = item.getAttribute('data-photo-id')
+
+      if (!prevAlbumId && !newAlbumId) return
+      this.movePhoto({ prevAlbumId, newAlbumId, photoId })
     },
   },
 }

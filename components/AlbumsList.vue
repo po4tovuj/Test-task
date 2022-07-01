@@ -35,152 +35,109 @@
     <!-- <draggable :list="contents" @change="handleChange">
       <li v-for="album in contents" :key="album.id"></li>
     </draggable> -->
-    <draggable
-      class="redBdr"
-      @change="handleChange"
-      v-model="contents"
-      :group="outerDragOptions"
-    >
-      <div
-        v-for="el in contents"
-        :key="el.title"
+    <draggable :list="albums" :group="outerDragOptions" class="redBdr">
+      <li
+        v-for="el in albums"
+        :key="el.id"
         :class="`blueBdr ${el.type || ''}`"
-        :album-id="el.id"
+        :data-album-id="el.id"
       >
         <p>{{ el.type }}</p>
         <p>{{ el.title }}</p>
         <draggable
           v-if="el.type === 'is-album'"
           class="orangeBdr minH"
-          :photo-id="el.id"
-          :list="el.photos"
-          :group="groupDraggableOptions"
+          :data-album-id="el.id"
+          :v-model="el.photos"
+          :group="innerDragOptions"
+          @end="onEnd"
+          @change="(e) => handleChange({ e, albumId: el.id })"
         >
-          <div
-            v-for="formObj in el.photos"
-            :key="formObj.id + '' + formObj.url"
+          <li
+            v-for="photo in el.photos"
+            :key="photo.id + '' + photo.url"
+            :data-photo-id="photo.id"
             class="greenBdr"
           >
-            <p>{{ formObj.title }}</p>
-          </div>
+            <p>{{ photo }}</p>
+          </li>
         </draggable>
-      </div>
+      </li>
     </draggable>
+    <PhotosList></PhotosList>
   </div>
 </template>
 
 <script>
 import { mapActions, mapGetters } from 'vuex'
-// import Card from './Card.vue'
-// import PhotoCard from './PhotoCard.vue'
+
 export default {
   name: 'AlbumsList',
   display: 'Nested',
   order: 15,
-  components: {},
+
   data() {
     return {
+      albums: [],
       outerDragOptions: {
         name: 'g1',
-        put: (to, from, dragEl) => {
-          console.log('fromfffdsf: ', from)
-          console.log('dsfsfsfsfdsfragEl: ', dragEl)
-          console.log('tossfsfsdfsf: ', to)
-        },
-        pull: (to, from, dragEl) => {
-          console.log('fsdfsfsfsfrom: ', from)
-
-          console.log('tosfsfsfsf: ', to)
-        },
-        // clone: this.moveFromTheAlbum,
+        put: 'g1',
+        clone: false,
         class: 'albums-wrapper',
-        // move: this.checkMove,
         tag: 'ul',
-      },
-      groupDraggableOptions: {
-        name: 'g1',
-        put: (to, from, dragEl, evt) => {
-          console.log('evt: ', evt)
-          const photoId = dragEl.getAttribute('album-id')
-          const albumId = to.options.photoId
-          console.log('photoId: ', photoId)
-          console.log('albumId: ', albumId)
-          this.movePhoto({
-            albumId,
-            photoId,
-          })
-          return false
-          // return !dragEl.classList.contains('is-album')
-        },
       },
       innerDragOptions: {
         name: 'photo',
-        // put: (to, from, dragEl) => {
-        //   console.log('from: ', from)
-        //   console.log('to: ', to)
-        //   console.log(dragEl)
-        //   return !dragEl.classList.contains('albums-wrapper') // || !to.classList.contains("formgroup")
-        // },
-
-        // clone: this.moveFromTheAlbum,
-        // tag: 'ul',
-        // class: 'albums-list__photo-wrapper',
-        // move: this.checkMove,
       },
     }
   },
+
   computed: {
     ...mapGetters({
       albumsList: 'photo/getAlbums',
-      photoList: 'photo/getUnsorted',
+      photoList: 'photo/getPhotos',
     }),
     contents: {
       get() {
-        return this.albumsList.concat(this.photoList)
+        return this.albumsList
       },
       set(val) {
-        console.log('val: ', val)
+        this.$store.commit('photo/sortAlbums', val)
       },
     },
-    albums: {
-      get() {
-        return [...this.albumsList]
-      },
-      set(val) {
-        debugger
-        // this.updateAlbums(val)
-      },
-    },
+  },
+
+  mounted() {
+    this.albums = [...this.albumsList]
   },
   methods: {
     ...mapActions({
       updateAlbums: 'photo/updateAlbums',
       movePhoto: 'photo/movePhoto',
+      sortPhotoInAlbum: 'photo/sortPhotoInAlbum',
     }),
-    checkIn(to, from, dragEl) {
-      // console.log('to in puull: ', to)
-      // console.log('from: ', from)
-      // console.log(dragEl)
+
+    handleChange({ e: { moved, removed }, albumId }) {
+      if (removed) return false
+      if (moved && albumId) {
+        this.sortPhotoInAlbum({
+          albumId,
+          newIndex: moved.newIndex,
+          oldIndex: moved.oldIndex,
+        })
+      }
     },
-    checkPut(to, from, dragEl) {
-      // console.log('to in puull: ', to)
-      // console.log('from: ', from)
-      // console.log(dragEl)
-    },
-    checkMove(evt) {
-      // console.log('evt: ', evt)
-    },
-    moveFromTheAlbum(photo) {
-      // console.log('photo: ', photo)
-      // this.movePhoto(photo)
-    },
-    saveToAlbum(payload) {
-      // console.log('payload: ', payload)
-      return false
-      // console.log('payload in save to: ', payload)
-    },
-    handleChange(payload) {
-      // console.log('ON Change: ', payload)
+    onEnd({ from, to, item }) {
+      const prevAlbumId = from.getAttribute('data-album-id')
+
+      const newAlbumId = to.getAttribute('data-album-id')
+
+      const photoId = item.getAttribute('data-photo-id')
+
+      if (newAlbumId === prevAlbumId) {
+        return false
+      }
+      this.movePhoto({ newAlbumId, photoId, prevAlbumId })
     },
   },
 }

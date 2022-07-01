@@ -19,7 +19,7 @@ export default {
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
-    { src: '~plugins/vuedraggable.js', ssr: false },
+    { src: '~plugins/vuedraggable.js', ssr: true },
     '~plugins/photos.js',
   ],
 

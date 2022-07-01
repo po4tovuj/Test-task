@@ -22,7 +22,7 @@ export default {
     AlbumsList,
   },
 
-  async fetch({ store }) {
+  async asyncData({ store }) {
     await store.dispatch('photo/getAlbums')
     await store.dispatch('photo/getPhotos')
   },
@@ -43,10 +43,6 @@ export default {
       fetchAlbums: 'photo/getAlbums',
       fetchPhotos: 'photo/getPhotos',
     }),
-    async fetchData() {
-      await this.$store.dispatch('photo/getAlbums')
-      // await this.fetchPhotos()
-    },
   },
 }
 </script>
